@@ -1,0 +1,16 @@
+{
+  "name": "@dtsris/web-sdk",
+  "version": "0.1.0",
+  "description": "DTS RIS Web SDK — auto-capture analytics (zero-PII)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
