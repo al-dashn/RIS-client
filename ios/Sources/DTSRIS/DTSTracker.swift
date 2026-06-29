@@ -1,0 +1,171 @@
+import Foundation
+
+public final class DTSTracker: @unchecked Sendable {
+    private let config: DTSConfig
+    private let anonymousUserId: String
+    private let sessionId: String
+    private let queue = DispatchQueue(label: "com.dtsris.tracker", qos: .utility)
+    private var eventQueue: [DTSEvent] = []
+    private var flushTimer: DispatchSourceTimer?
+    private var screenCapture: DTSScreenViewCapture?
+    private let cartCapture: DTSCartUpdateCapture
+    private let customizationCapture: DTSCustomizationCapture
+    private let errorCapture: DTSErrorCapture
+    private var disposed = false
+
+    public init(config: DTSConfig) {
+        self.config = config
+        self.anonymousUserId = DTSStorage.getAnonymousUserId()
+        self.sessionId = DTSStorage.getSessionId()
+
+        self.cartCapture = DTSCartUpdateCapture { [weak self] type, props in
+            self?.track(type: type, properties: props)
+        }
+        self.customizationCapture = DTSCustomizationCapture { [weak self] type, props in
+            self?.track(type: type, properties: props)
+        }
+        self.errorCapture = DTSErrorCapture { [weak self] type, props in
+            self?.track(type: type, properties: props)
+        }
+    }
+
+    // MARK: - Public API
+
+    public func start() {
+        guard !disposed else { return }
+        screenCapture = DTSScreenViewCapture { [weak self] type, props in
+            self?.track(type: type, properties: props)
+        }
+
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + config.flushInterval, repeating: config.flushInterval)
+        timer.setEventHandler { [weak self] in
+            self?.flush()
+        }
+        timer.resume()
+        self.flushTimer = timer
+    }
+
+    public func track(type: DTSEventType, properties: [String: DTSEventValue] = [:]) {
+        guard !disposed else { return }
+
+        let event = DTSEvent(
+            eventType: type,
+            sessionId: sessionId,
+            anonymousUserId: anonymousUserId,
+            properties: properties
+        )
+
+        queue.async { [weak self] in
+            guard let self = self, !self.disposed else { return }
+            self.eventQueue.append(event)
+            if self.eventQueue.count >= self.config.maxBatchSize {
+                self.flush()
+            }
+        }
+    }
+
+    // MARK: - Convenience methods for manual tracking
+
+    public func trackCartAction(
+        action: String,
+        productId: String? = nil,
+        quantity: Int? = nil
+    ) {
+        cartCapture.capture(action: action, productId: productId, quantity: quantity)
+    }
+
+    public func trackCustomization(
+        attribute: String,
+        oldValue: String? = nil,
+        newValue: String? = nil
+    ) {
+        customizationCapture.capture(attribute: attribute, oldValue: oldValue, newValue: newValue)
+    }
+
+    public func trackError(_ error: Error) {
+        errorCapture.capture(error: error)
+    }
+
+    public func trackErrorMessage(_ message: String) {
+        errorCapture.capture(message: message)
+    }
+
+    // MARK: - Flush & Dispose
+
+    public func flush() {
+        queue.async { [weak self] in
+            guard let self = self, !self.disposed, !self.eventQueue.isEmpty else { return }
+            let batch = self.eventQueue
+            self.eventQueue = []
+
+            let urlString = "\(self.config.endpointUrl)/events"
+            let maxRetries = self.config.maxRetries
+            let apiKey = self.config.apiKey
+
+            Task { [weak self] in
+                guard let self = self else { return }
+                do {
+                    try await DTSRetry.withBackoff(maxRetries: maxRetries) {
+                        try await self.sendBatch(batch, url: urlString, apiKey: apiKey)
+                    }
+                } catch {
+                    self.queue.async {
+                        self.eventQueue = batch + self.eventQueue
+                    }
+                    Self.logError("Flush failed, events re-queued", error: error)
+                }
+            }
+        }
+    }
+
+    public func dispose() {
+        disposed = true
+        flushTimer?.cancel()
+        flushTimer = nil
+        screenCapture = nil
+        errorCapture.markCleanTermination()
+        flush()
+    }
+
+    // MARK: - Private
+
+    private func sendBatch(
+        _ batch: [DTSEvent],
+        url urlString: String,
+        apiKey: String
+    ) async throws {
+        guard let url = URL(string: urlString) else {
+            throw DTSTrackerError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+        let wrapper = ["events": batch]
+        let encoder = JSONEncoder()
+        request.httpBody = try encoder.encode(wrapper)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResp = response as? HTTPURLResponse,
+              (200..<300).contains(httpResp.statusCode) else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let body = String(data: data, encoding: .utf8)?.prefix(200) ?? ""
+            throw DTSTrackerError.httpError(status: status, body: String(body))
+        }
+    }
+
+    private static func logError(_ message: String, error: Error) {
+        let msg = error.localizedDescription
+        #if DEBUG
+        print("[DTS RIS] \(message): \(msg)")
+        #endif
+    }
+}
+
+enum DTSTrackerError: Error {
+    case invalidURL
+    case httpError(status: Int, body: String)
+}
