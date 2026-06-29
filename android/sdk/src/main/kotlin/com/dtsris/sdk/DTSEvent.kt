@@ -13,10 +13,12 @@ enum class DTSEventType(val value: String) {
 
 @Serializable
 data class DTSEvent(
+    val eventId: String,
     val eventType: String,
     val timestamp: String,
     val sessionId: String,
     val anonymousUserId: String,
+    val page: String,
     val properties: Map<String, JsonPrimitive>,
 ) {
     companion object {
@@ -24,12 +26,15 @@ data class DTSEvent(
             eventType: DTSEventType,
             sessionId: String,
             anonymousUserId: String,
+            page: String = "",
             properties: Map<String, String> = emptyMap(),
         ): DTSEvent = DTSEvent(
+            eventId = java.util.UUID.randomUUID().toString(),
             eventType = eventType.value,
             timestamp = Instant.now().toString(),
             sessionId = sessionId,
             anonymousUserId = anonymousUserId,
+            page = page,
             properties = properties.mapValues { JsonPrimitive(it.value) },
         )
     }
