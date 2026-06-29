@@ -17,20 +17,20 @@ export function installScreenViewCapture(
   }
 
   // Capture on history-based navigation (SPA)
-  const originalPushState = history.pushState.bind(history);
-  const originalReplaceState = history.replaceState.bind(history);
+  const originalPushState = history.pushState.bind(history) as typeof history.pushState;
+  const originalReplaceState = history.replaceState.bind(history) as typeof history.replaceState;
 
   function onNavigate(): void {
     // Small delay so the DOM title updates
     setTimeout(handler, 50);
   }
 
-  history.pushState = function (...args: any[]): void {
-    originalPushState(...args);
+  history.pushState = function (data: any, unused: string, url?: string | URL | null): void {
+    originalPushState(data, unused, url);
     onNavigate();
   };
-  history.replaceState = function (...args: any[]): void {
-    originalReplaceState(...args);
+  history.replaceState = function (data: any, unused: string, url?: string | URL | null): void {
+    originalReplaceState(data, unused, url);
     onNavigate();
   };
   window.addEventListener('popstate', onNavigate);
