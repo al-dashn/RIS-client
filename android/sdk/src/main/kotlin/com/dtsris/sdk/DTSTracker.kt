@@ -52,9 +52,9 @@ class DTSTracker private constructor(
         sessionId = DTSStorage.getSessionId()
         DTSStorage.rotateSessionId()
 
-        cartCapture = DTSCartUpdateCapture { type, props -> track(type, props) }
-        customizationCapture = DTSCustomizationCapture { type, props -> track(type, props) }
-        errorCapture = DTSErrorCapture { type, props -> track(type, props) }
+        cartCapture = DTSCartUpdateCapture { type, props -> track(type, "", props) }
+        customizationCapture = DTSCustomizationCapture { type, props -> track(type, "", props) }
+        errorCapture = DTSErrorCapture { type, props -> track(type, "", props) }
     }
 
     // ---- Public API ----
@@ -63,7 +63,9 @@ class DTSTracker private constructor(
         if (started || disposed) return
         started = true
 
-        screenCapture = DTSScreenViewCapture { type, props -> track(type, props) }
+        screenCapture = DTSScreenViewCapture { type, props -> 
+            track(type, props["screen"] ?: "", props)
+        }
         screenCapture?.register(application)
 
         errorCapture.install()
@@ -76,9 +78,9 @@ class DTSTracker private constructor(
         }
     }
 
-    fun track(type: DTSEventType, properties: Map<String, String> = emptyMap()) {
+    fun track(type: DTSEventType, page: String = "", properties: Map<String, String> = emptyMap()) {
         if (disposed) return
-        val event = DTSEvent.create(type, sessionId, anonymousUserId, properties)
+        val event = DTSEvent.create(type, sessionId, anonymousUserId, page, properties)
         synchronized(eventQueue) {
             eventQueue.add(event)
             if (eventQueue.size >= config.maxBatchSize) {

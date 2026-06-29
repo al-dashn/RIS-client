@@ -55,6 +55,7 @@ export class DTSTracker {
       eventType,
       this.sessionId,
       this.anonymousUserId,
+      window.location.pathname,
       properties,
     );
     this.eventQueue.push(event);

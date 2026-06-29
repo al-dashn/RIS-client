@@ -8,22 +8,27 @@ public enum DTSEventType: String, Codable {
 }
 
 public struct DTSEvent: Codable {
+    public let eventId: String
     public let eventType: DTSEventType
     public let timestamp: String
     public let sessionId: String
     public let anonymousUserId: String
+    public let page: String
     public let properties: [String: DTSEventValue]
 
     public init(
         eventType: DTSEventType,
         sessionId: String,
         anonymousUserId: String,
+        page: String = "",
         properties: [String: DTSEventValue] = [:]
     ) {
+        self.eventId = UUID().uuidString
         self.eventType = eventType
         self.timestamp = ISO8601DateFormatter().string(from: Date())
         self.sessionId = sessionId
         self.anonymousUserId = anonymousUserId
+        self.page = page
         self.properties = properties
     }
 }

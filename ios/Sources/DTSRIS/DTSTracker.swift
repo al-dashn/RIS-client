@@ -19,13 +19,13 @@ public final class DTSTracker: @unchecked Sendable {
         self.sessionId = DTSStorage.getSessionId()
 
         self.cartCapture = DTSCartUpdateCapture { [weak self] type, props in
-            self?.track(type: type, properties: props)
+            self?.track(type: type, page: "", properties: props)
         }
         self.customizationCapture = DTSCustomizationCapture { [weak self] type, props in
-            self?.track(type: type, properties: props)
+            self?.track(type: type, page: "", properties: props)
         }
         self.errorCapture = DTSErrorCapture { [weak self] type, props in
-            self?.track(type: type, properties: props)
+            self?.track(type: type, page: "", properties: props)
         }
     }
 
@@ -34,7 +34,11 @@ public final class DTSTracker: @unchecked Sendable {
     public func start() {
         guard !disposed else { return }
         screenCapture = DTSScreenViewCapture { [weak self] type, props in
-            self?.track(type: type, properties: props)
+            let page = props["screen"].flatMap { value in
+                if case .string(let s) = value { return s }
+                return nil
+            } ?? ""
+            self?.track(type: type, page: page, properties: props)
         }
 
         let timer = DispatchSource.makeTimerSource(queue: queue)
@@ -46,13 +50,14 @@ public final class DTSTracker: @unchecked Sendable {
         self.flushTimer = timer
     }
 
-    public func track(type: DTSEventType, properties: [String: DTSEventValue] = [:]) {
+    public func track(type: DTSEventType, page: String = "", properties: [String: DTSEventValue] = [:]) {
         guard !disposed else { return }
 
         let event = DTSEvent(
             eventType: type,
             sessionId: sessionId,
             anonymousUserId: anonymousUserId,
+            page: page,
             properties: properties
         )
 
