@@ -1,0 +1,43 @@
+name: Build SDK
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build UMD bundle
+        run: |
+          npm install --save-dev esbuild
+          npx esbuild src/tracker.ts \
+            --bundle --format=iife --global-name=DTSRIS \
+            --outfile=dist-umd/dtsris-tracker.umd.js \
+            --minify --target=es2020 --platform=browser
+
+      - name: Verify bundle
+        run: |
+          echo "UMD size: $(wc -c < dist-umd/dtsris-tracker.umd.js) bytes"
+          grep -q "DTSRIS" dist-umd/dtsris-tracker.umd.js && echo "✅ UMD valid" || exit 1
+
+      - name: Upload UMD artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtsris-tracker-umd
+          path: web/dist-umd/dtsris-tracker.umd.js
