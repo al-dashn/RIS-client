@@ -8,9 +8,21 @@ public final class DTSTracker: @unchecked Sendable {
     private var eventQueue: [DTSEvent] = []
     private var flushTimer: DispatchSourceTimer?
     private var screenCapture: DTSScreenViewCapture?
-    private let cartCapture: DTSCartUpdateCapture
-    private let customizationCapture: DTSCustomizationCapture
-    private let errorCapture: DTSErrorCapture
+    private lazy var cartCapture: DTSCartUpdateCapture = {
+        DTSCartUpdateCapture { [weak self] type, props in
+            self?.track(type: type, page: "", properties: props)
+        }
+    }()
+    private lazy var customizationCapture: DTSCustomizationCapture = {
+        DTSCustomizationCapture { [weak self] type, props in
+            self?.track(type: type, page: "", properties: props)
+        }
+    }()
+    private lazy var errorCapture: DTSErrorCapture = {
+        DTSErrorCapture { [weak self] type, props in
+            self?.track(type: type, page: "", properties: props)
+        }
+    }()
     private var disposed = false
 
     /// Authenticated user ID — merged into every event's properties as "user_id".
@@ -35,16 +47,6 @@ public final class DTSTracker: @unchecked Sendable {
         self.config = config
         self.anonymousUserId = DTSStorage.getAnonymousUserId()
         self.sessionId = DTSStorage.getSessionId()
-
-        self.cartCapture = DTSCartUpdateCapture { [weak self] type, props in
-            self?.track(type: type, page: "", properties: props)
-        }
-        self.customizationCapture = DTSCustomizationCapture { [weak self] type, props in
-            self?.track(type: type, page: "", properties: props)
-        }
-        self.errorCapture = DTSErrorCapture { [weak self] type, props in
-            self?.track(type: type, page: "", properties: props)
-        }
     }
 
     // MARK: - Public API
@@ -135,15 +137,26 @@ public final class DTSTracker: @unchecked Sendable {
             let maxRetries = self.config.maxRetries
             let apiKey = self.config.apiKey
 
+            // Capture batch as Data to avoid non-Sendable capture in @Sendable Task
+            let encoder = JSONEncoder()
+            guard let batchData = try? encoder.encode(["events": batch]) else {
+                self.eventQueue = batch + self.eventQueue
+                return
+            }
+
             Task { [weak self] in
                 guard let self = self else { return }
                 do {
                     try await DTSRetry.withBackoff(maxRetries: maxRetries) {
-                        try await self.sendBatch(batch, url: urlString, apiKey: apiKey)
+                        try await self.sendBatchData(batchData, url: urlString, apiKey: apiKey)
                     }
                 } catch {
                     self.queue.async {
-                        self.eventQueue = batch + self.eventQueue
+                        let decoder = JSONDecoder()
+                        if let wrapper = try? decoder.decode([String: [DTSEvent]].self, from: batchData),
+                           let events = wrapper["events"] {
+                            self.eventQueue = events + self.eventQueue
+                        }
                     }
                     Self.logError("Flush failed, events re-queued", error: error)
                 }
@@ -162,8 +175,8 @@ public final class DTSTracker: @unchecked Sendable {
 
     // MARK: - Private
 
-    private func sendBatch(
-        _ batch: [DTSEvent],
+    private func sendBatchData(
+        _ batchData: Data,
         url urlString: String,
         apiKey: String
     ) async throws {
@@ -175,10 +188,7 @@ public final class DTSTracker: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
-
-        let wrapper = ["events": batch]
-        let encoder = JSONEncoder()
-        request.httpBody = try encoder.encode(wrapper)
+        request.httpBody = batchData
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResp = response as? HTTPURLResponse,

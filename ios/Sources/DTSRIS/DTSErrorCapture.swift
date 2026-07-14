@@ -8,8 +8,12 @@ final class DTSErrorCapture {
     private static let aliveMarkerKey = "com.dtsris.sessionAlive"
     private static let crashMarkerKey = "com.dtsris.lastCrash"
 
+    /// Static reference for the C function pointer callback.
+    private static var currentInstance: DTSErrorCapture?
+
     init(emit: @escaping (DTSEventType, [String: DTSEventValue]) -> Void) {
         self.emit = emit
+        Self.currentInstance = self
 
         // Detect abnormal termination from previous session
         if UserDefaults.standard.bool(forKey: Self.aliveMarkerKey) {
@@ -20,11 +24,9 @@ final class DTSErrorCapture {
         }
 
         // Catch Objective-C exceptions (NSException)
-        NSSetUncaughtExceptionHandler { exception in
-            let msg = Self.stripPII(exception.reason ?? exception.name.rawValue)
-            UserDefaults.standard.set(msg, forKey: Self.crashMarkerKey)
-            UserDefaults.standard.synchronize()
-        }
+        // Swift 6: NSSetUncaughtExceptionHandler requires a C function pointer,
+        // cannot use a closure that captures context.
+        NSSetUncaughtExceptionHandler(DTSErrorCapture.uncaughtExceptionHandler)
 
         // Mark this session as alive
         UserDefaults.standard.set(true, forKey: Self.aliveMarkerKey)
@@ -39,6 +41,13 @@ final class DTSErrorCapture {
                 "source": .string("NSException"),
             ])
         }
+    }
+
+    /// C function pointer compatible handler for NSExceptions
+    private static let uncaughtExceptionHandler: @convention(c) (NSException) -> Void = { exception in
+        let msg = DTSErrorCapture.stripPII(exception.reason ?? exception.name.rawValue)
+        UserDefaults.standard.set(msg, forKey: crashMarkerKey)
+        UserDefaults.standard.synchronize()
     }
 
     /// Called on normal tracker disposal to clear the alive marker.

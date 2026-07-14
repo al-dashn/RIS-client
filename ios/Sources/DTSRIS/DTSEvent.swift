@@ -7,7 +7,7 @@ public enum DTSEventType: String, Codable {
     case error
 }
 
-public struct DTSEvent: Codable {
+public struct DTSEvent: Codable, Sendable {
     public let eventId: String
     public let eventType: String
     public let timestamp: String
@@ -74,7 +74,7 @@ public struct DTSEvent: Codable {
 }
 
 /// A type-safe JSON value for event properties.
-public enum DTSEventValue: Codable {
+public enum DTSEventValue: Codable, Sendable {
     case string(String)
     case int(Int)
     case double(Double)

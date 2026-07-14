@@ -31,7 +31,7 @@ class DTSTracker private constructor(
     /** Authenticated user ID — merged into every event's properties as "user_id". */
     @Volatile var userId: String? = null
     /** Current cart ID — merged into every event's properties as "cart_id" when set. */
-    @Volatile var cartId: String? = null**
+    @Volatile var cartId: String? = null
 
     private val json = Json { ignoreUnknownKeys = true }
 
