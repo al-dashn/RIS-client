@@ -18,10 +18,15 @@ data class DTSEvent(
     val timestamp: String,
     val sessionId: String,
     val anonymousUserId: String,
+    val platform: String,
+    val osVersion: String,
     val page: String,
     val properties: Map<String, JsonPrimitive>,
 ) {
     companion object {
+        private const val PLATFORM = "android"
+        private val OS_VERSION: String by lazy { android.os.Build.VERSION.RELEASE }
+
         fun create(
             eventType: DTSEventType,
             sessionId: String,
@@ -49,6 +54,8 @@ data class DTSEvent(
             timestamp = Instant.now().toString(),
             sessionId = sessionId,
             anonymousUserId = anonymousUserId,
+            platform = PLATFORM,
+            osVersion = OS_VERSION,
             page = page,
             properties = properties.mapValues { JsonPrimitive(it.value) },
         )

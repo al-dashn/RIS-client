@@ -13,8 +13,29 @@ public struct DTSEvent: Codable {
     public let timestamp: String
     public let sessionId: String
     public let anonymousUserId: String
+    public let platform: String
+    public let osVersion: String
     public let page: String
     public let properties: [String: DTSEventValue]
+
+    private static let platformValue: String = {
+        #if os(iOS)
+        return "ios"
+        #elseif os(macOS)
+        return "macos"
+        #elseif os(tvOS)
+        return "tvos"
+        #elseif os(watchOS)
+        return "watchos"
+        #else
+        return "unknown"
+        #endif
+    }()
+
+    private static let osVersionValue: String = {
+        let processInfo = ProcessInfo.processInfo
+        return "\(processInfo.operatingSystemVersion.majorVersion).\(processInfo.operatingSystemVersion.minorVersion).\(processInfo.operatingSystemVersion.patchVersion)"
+    }()
 
     public init(
         eventType: DTSEventType,
@@ -45,6 +66,8 @@ public struct DTSEvent: Codable {
         self.timestamp = ISO8601DateFormatter().string(from: Date())
         self.sessionId = sessionId
         self.anonymousUserId = anonymousUserId
+        self.platform = Self.platformValue
+        self.osVersion = Self.osVersionValue
         self.page = page
         self.properties = properties
     }
