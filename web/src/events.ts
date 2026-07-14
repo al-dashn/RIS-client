@@ -1,4 +1,4 @@
-export type EventType = 'screen_view' | 'cart_update' | 'customization' | 'error';
+export type EventType = string; // Any event name — the ingestion API accepts all strings
 
 export interface DTSEvent {
   eventId: string;
