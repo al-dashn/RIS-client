@@ -13,6 +13,19 @@ public final class DTSTracker: @unchecked Sendable {
     private let errorCapture: DTSErrorCapture
     private var disposed = false
 
+    // MARK: - Singleton
+
+    /// Shared instance. Set via `DTSTracker.initialize(config:)` before use.
+    public private(set) static var shared: DTSTracker?
+
+    /// Initialize the shared singleton. Must be called once at app startup.
+    @discardableResult
+    public static func initialize(config: DTSConfig) -> DTSTracker {
+        let tracker = DTSTracker(config: config)
+        shared = tracker
+        return tracker
+    }
+
     public init(config: DTSConfig) {
         self.config = config
         self.anonymousUserId = DTSStorage.getAnonymousUserId()
@@ -51,10 +64,15 @@ public final class DTSTracker: @unchecked Sendable {
     }
 
     public func track(type: DTSEventType, page: String = "", properties: [String: DTSEventValue] = [:]) {
+        track(eventType: type.rawValue, page: page, properties: properties)
+    }
+
+    /// Track an event with a free-form event type string (for custom KPIs not in the enum).
+    public func track(eventType: String, page: String = "", properties: [String: DTSEventValue] = [:]) {
         guard !disposed else { return }
 
         let event = DTSEvent(
-            eventType: type,
+            eventType: eventType,
             sessionId: sessionId,
             anonymousUserId: anonymousUserId,
             page: page,

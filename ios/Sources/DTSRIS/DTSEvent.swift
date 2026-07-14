@@ -9,7 +9,7 @@ public enum DTSEventType: String, Codable {
 
 public struct DTSEvent: Codable {
     public let eventId: String
-    public let eventType: DTSEventType
+    public let eventType: String
     public let timestamp: String
     public let sessionId: String
     public let anonymousUserId: String
@@ -18,6 +18,23 @@ public struct DTSEvent: Codable {
 
     public init(
         eventType: DTSEventType,
+        sessionId: String,
+        anonymousUserId: String,
+        page: String = "",
+        properties: [String: DTSEventValue] = [:]
+    ) {
+        self.init(
+            eventType: eventType.rawValue,
+            sessionId: sessionId,
+            anonymousUserId: anonymousUserId,
+            page: page,
+            properties: properties
+        )
+    }
+
+    /// Create an event with a free-form event type string (for custom KPIs).
+    public init(
+        eventType: String,
         sessionId: String,
         anonymousUserId: String,
         page: String = "",

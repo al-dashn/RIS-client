@@ -28,9 +28,24 @@ data class DTSEvent(
             anonymousUserId: String,
             page: String = "",
             properties: Map<String, String> = emptyMap(),
+        ): DTSEvent = create(
+            eventType = eventType.value,
+            sessionId = sessionId,
+            anonymousUserId = anonymousUserId,
+            page = page,
+            properties = properties,
+        )
+
+        /** Create an event with a free-form event type string (for custom KPIs). */
+        fun create(
+            eventType: String,
+            sessionId: String,
+            anonymousUserId: String,
+            page: String = "",
+            properties: Map<String, String> = emptyMap(),
         ): DTSEvent = DTSEvent(
             eventId = java.util.UUID.randomUUID().toString(),
-            eventType = eventType.value,
+            eventType = eventType,
             timestamp = Instant.now().toString(),
             sessionId = sessionId,
             anonymousUserId = anonymousUserId,

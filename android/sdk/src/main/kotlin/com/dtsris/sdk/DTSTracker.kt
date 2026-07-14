@@ -79,8 +79,13 @@ class DTSTracker private constructor(
     }
 
     fun track(type: DTSEventType, page: String = "", properties: Map<String, String> = emptyMap()) {
+        track(type.value, page, properties)
+    }
+
+    /** Track an event with a free-form event type string (for custom KPIs not in the enum). */
+    fun track(eventType: String, page: String = "", properties: Map<String, String> = emptyMap()) {
         if (disposed) return
-        val event = DTSEvent.create(type, sessionId, anonymousUserId, page, properties)
+        val event = DTSEvent.create(eventType, sessionId, anonymousUserId, page, properties)
         synchronized(eventQueue) {
             eventQueue.add(event)
             if (eventQueue.size >= config.maxBatchSize) {
