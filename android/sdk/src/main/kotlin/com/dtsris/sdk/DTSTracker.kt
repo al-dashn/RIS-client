@@ -28,6 +28,11 @@ class DTSTracker private constructor(
     @Volatile private var started = false
     @Volatile private var disposed = false
 
+    /** Authenticated user ID — merged into every event's properties as "user_id". */
+    @Volatile var userId: String? = null
+    /** Current cart ID — merged into every event's properties as "cart_id" when set. */
+    @Volatile var cartId: String? = null**
+
     private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
@@ -85,7 +90,10 @@ class DTSTracker private constructor(
     /** Track an event with a free-form event type string (for custom KPIs not in the enum). */
     fun track(eventType: String, page: String = "", properties: Map<String, String> = emptyMap()) {
         if (disposed) return
-        val event = DTSEvent.create(eventType, sessionId, anonymousUserId, page, properties)
+        val enriched = properties.toMutableMap()
+        userId?.let { enriched["user_id"] = it }
+        cartId?.let { enriched["cart_id"] = it }
+        val event = DTSEvent.create(eventType, sessionId, anonymousUserId, page, enriched)
         synchronized(eventQueue) {
             eventQueue.add(event)
             if (eventQueue.size >= config.maxBatchSize) {

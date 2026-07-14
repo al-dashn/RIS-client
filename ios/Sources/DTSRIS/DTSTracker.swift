@@ -13,6 +13,11 @@ public final class DTSTracker: @unchecked Sendable {
     private let errorCapture: DTSErrorCapture
     private var disposed = false
 
+    /// Authenticated user ID — merged into every event's properties as "user_id".
+    public var userId: String?
+    /// Current cart ID — merged into every event's properties as "cart_id" when set.
+    public var cartId: String?
+
     // MARK: - Singleton
 
     /// Shared instance. Set via `DTSTracker.initialize(config:)` before use.
@@ -71,12 +76,16 @@ public final class DTSTracker: @unchecked Sendable {
     public func track(eventType: String, page: String = "", properties: [String: DTSEventValue] = [:]) {
         guard !disposed else { return }
 
+        var enriched = properties
+        if let uid = userId { enriched["user_id"] = .string(uid) }
+        if let cid = cartId { enriched["cart_id"] = .string(cid) }
+
         let event = DTSEvent(
             eventType: eventType,
             sessionId: sessionId,
             anonymousUserId: anonymousUserId,
             page: page,
-            properties: properties
+            properties: enriched
         )
 
         queue.async { [weak self] in
