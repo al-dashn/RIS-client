@@ -21,9 +21,9 @@ class DTSTracker private constructor(
     private val eventQueue = mutableListOf<DTSEvent>()
     private var flushJob: Job? = null
     private var screenCapture: DTSScreenViewCapture? = null
-    val cartCapture: DTSCartUpdateCapture
-    val customizationCapture: DTSCustomizationCapture
-    val errorCapture: DTSErrorCapture
+    internal val cartCapture: DTSCartUpdateCapture
+    internal val customizationCapture: DTSCustomizationCapture
+    internal val errorCapture: DTSErrorCapture
 
     @Volatile private var started = false
     @Volatile private var disposed = false
