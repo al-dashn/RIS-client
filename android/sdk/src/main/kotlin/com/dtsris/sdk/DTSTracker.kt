@@ -142,6 +142,18 @@ class DTSTracker private constructor(
     private fun sendBatch(batch: List<DTSEvent>) {
         val url = URL("${config.normalizedEndpointUrl}/events")
         val connection = url.openConnection() as HttpURLConnection
+        // Allow self-signed certs for development endpoints
+        if (config.allowInsecureSsl && connection is javax.net.ssl.HttpsURLConnection) {
+            val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+            })
+            val sslContext = javax.net.ssl.SSLContext.getInstance("TLS")
+            sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+            connection.sslSocketFactory = sslContext.socketFactory
+            connection.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
+        }
         connection.apply {
             requestMethod = "POST"
             setRequestProperty("Content-Type", "application/json")
@@ -165,6 +177,12 @@ class DTSTracker private constructor(
 
     private fun logError(message: String, error: Throwable) {
         Log.e("DTSRIS", "$message: ${error.message}")
+        // Log full chain for SSL/debugging
+        var cause: Throwable? = error.cause
+        while (cause != null) {
+            Log.e("DTSRIS", "  caused by: ${cause.message}")
+            cause = cause.cause
+        }
     }
 }
 
