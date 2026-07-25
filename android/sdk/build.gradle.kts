@@ -2,6 +2,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("maven-publish")
 }
 
 android {
@@ -19,6 +20,49 @@ android {
 
     kotlinOptions {
         jvmTarget = "21"
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+}
+
+// Maven publication — compatible with JitPack and Maven Central
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                groupId = "com.dtsris"
+                artifactId = "sdk"
+                version = project.findProperty("VERSION_NAME") as? String ?: "0.2.0"
+
+                pom {
+                    name.set("DTS RIS Android SDK")
+                    description.set("Zero-PII analytics auto-capture SDK for Android")
+                    url.set("https://github.com/al-dashn/RIS-client")
+                    licenses {
+                        license {
+                            name.set("MIT")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
+                    developers {
+                        developer {
+                            name.set("DTS RIS Team")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/al-dashn/RIS-client.git")
+                        developerConnection.set("scm:git:ssh://github.com/al-dashn/RIS-client.git")
+                        url.set("https://github.com/al-dashn/RIS-client")
+                    }
+                }
+            }
+        }
     }
 }
 

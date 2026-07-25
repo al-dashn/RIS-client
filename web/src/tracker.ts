@@ -6,8 +6,27 @@ import { installScreenViewCapture } from './auto-capture/screen-view';
 import { installCartUpdateCapture } from './auto-capture/cart-update';
 import { installCustomizationCapture } from './auto-capture/customization';
 import { installErrorCapture } from './auto-capture/error';
+import { installClickCapture } from './auto-capture/click';
+import { installFormCapture } from './auto-capture/form';
+import { installScrollDepthCapture } from './auto-capture/scroll';
+import { installPerformanceCapture } from './auto-capture/performance';
+import {
+  identify,
+  resetIdentity,
+  getIdentity,
+  type IdentityState,
+  type UserTraits,
+} from './identity';
+import {
+  grantConsent,
+  revokeConsent,
+  getConsent,
+  isTrackingAllowed,
+  type ConsentCategory,
+  type ConsentState,
+} from './consent';
 
-export type { DTSConfig, DTSConfigInput, DTSEvent, EventType };
+export type { DTSConfig, DTSConfigInput, DTSEvent, EventType, IdentityState, UserTraits, ConsentCategory, ConsentState };
 
 export class DTSTracker {
   private readonly config: DTSConfig;
@@ -27,7 +46,7 @@ export class DTSTracker {
   start(): void {
     if (this.disposed) return;
 
-    // Install auto-capture handlers
+    // Install auto-capture handlers (conditional on config)
     this.teardowns.push(
       installScreenViewCapture((eventType, props) => this.emitter(eventType, props)),
     );
@@ -41,22 +60,57 @@ export class DTSTracker {
       installErrorCapture((eventType, props) => this.emitter(eventType, props)),
     );
 
+    if (this.config.autoCaptureClicks) {
+      this.teardowns.push(
+        installClickCapture((eventType, props) => this.emitter(eventType, props)),
+      );
+    }
+
+    if (this.config.autoCaptureForms) {
+      this.teardowns.push(
+        installFormCapture((eventType, props) => this.emitter(eventType, props)),
+      );
+    }
+
+    if (this.config.autoCaptureScroll) {
+      this.teardowns.push(
+        installScrollDepthCapture((eventType, props) => this.emitter(eventType, props)),
+      );
+    }
+
+    if (this.config.autoCapturePerformance) {
+      this.teardowns.push(
+        installPerformanceCapture((eventType, props) => this.emitter(eventType, props)),
+      );
+    }
+
     // Start flush timer — flush() handles errors internally
     this.flushTimer = setInterval(() => {
       this.flush();
     }, this.config.flushIntervalMs);
   }
 
-  /** Manually enqueue an event. The event is batched and sent asynchronously. */
+  /** Manually enqueue an event. The event is batched and sent asynchronously.
+   *  Respects consent: if consent is required and not granted, the event is dropped. */
   track(eventType: EventType, properties: Record<string, unknown> = {}): void {
     if (this.disposed) return;
+
+    // Consent gate
+    if (!isTrackingAllowed(this.config.consentRequired)) return;
+
+    // Enrich with identity if available
+    const identity = getIdentity();
+    const enrichedProps = { ...properties };
+    if (identity.userId) {
+      enrichedProps['user_id'] = identity.userId;
+    }
 
     const event = createEvent(
       eventType,
       this.sessionId,
       this.anonymousUserId,
       window.location.pathname,
-      properties,
+      enrichedProps,
     );
     this.eventQueue.push(event);
 
@@ -64,6 +118,48 @@ export class DTSTracker {
     if (this.eventQueue.length >= this.config.maxBatchSize) {
       this.flush();
     }
+  }
+
+  // ── Identity ──
+
+  /** Link the current anonymous session to a logged-in user. Emits an `identify` event. */
+  identify(userId: string, traits: UserTraits = {}): void {
+    identify(userId, traits, (eventType, props) => {
+      this.track(eventType, props);
+    });
+  }
+
+  /** Clear the current user identity (on logout). Emits a `logout` event. */
+  resetIdentity(): void {
+    resetIdentity((eventType, props) => {
+      this.track(eventType, props);
+    });
+  }
+
+  /** Get the current identity state. */
+  getIdentity(): IdentityState {
+    return getIdentity();
+  }
+
+  // ── Consent ──
+
+  /** Grant GDPR consent for the given categories. Emits a `consent_updated` event. */
+  grantConsent(categories: ConsentCategory[]): void {
+    grantConsent(categories, (eventType, props) => {
+      this.track(eventType, props);
+    });
+  }
+
+  /** Revoke all GDPR consent. Emits a `consent_updated` event. */
+  revokeConsent(): void {
+    revokeConsent((eventType, props) => {
+      this.track(eventType, props);
+    });
+  }
+
+  /** Get the current consent state. */
+  getConsent(): ConsentState {
+    return getConsent();
   }
 
   /** Flush all queued events to the server immediately. */

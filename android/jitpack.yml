@@ -1,0 +1,11 @@
+# JitPack configuration — makes the Android SDK auto-buildable
+# Just push a git tag (e.g. v0.2.0) and JitPack builds it:
+#   implementation("com.github.your-org:ris-client:0.2.0")
+jdk:
+  - openjdk21
+before_install:
+  - sdk install java 21.0.0-tem
+  - sdk use java 21.0.0-tem
+install:
+  - echo "JitPack build — using sdk/build.gradle.kts"
+  - ./gradlew :sdk:assembleRelease

@@ -1,0 +1,6 @@
+src/
+node_modules/
+*.tsbuildinfo
+tsconfig.json
+vite.umd.config.ts
+build-umd.mjs

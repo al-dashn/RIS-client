@@ -1,6 +1,7 @@
 package com.dtsris.sdk
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
 
@@ -21,7 +22,7 @@ data class DTSEvent(
     val platform: String,
     val osVersion: String,
     val page: String,
-    val properties: Map<String, JsonPrimitive>,
+    val properties: Map<String, JsonElement>,
 ) {
     companion object {
         private const val PLATFORM = "android"
@@ -41,13 +42,28 @@ data class DTSEvent(
             properties = properties,
         )
 
-        /** Create an event with a free-form event type string (for custom KPIs). */
+        /** Create an event with string properties (convenience for most use cases). */
         fun create(
             eventType: String,
             sessionId: String,
             anonymousUserId: String,
             page: String = "",
             properties: Map<String, String> = emptyMap(),
+        ): DTSEvent = createTyped(
+            eventType = eventType,
+            sessionId = sessionId,
+            anonymousUserId = anonymousUserId,
+            page = page,
+            properties = properties.mapValues { JsonPrimitive(it.value) },
+        )
+
+        /** Create an event with fully typed properties (numbers, booleans, nested objects). */
+        fun createTyped(
+            eventType: String,
+            sessionId: String,
+            anonymousUserId: String,
+            page: String = "",
+            properties: Map<String, JsonElement> = emptyMap(),
         ): DTSEvent = DTSEvent(
             eventId = java.util.UUID.randomUUID().toString(),
             eventType = eventType,
@@ -57,7 +73,7 @@ data class DTSEvent(
             platform = PLATFORM,
             osVersion = OS_VERSION,
             page = page,
-            properties = properties.mapValues { JsonPrimitive(it.value) },
+            properties = properties,
         )
     }
 }

@@ -6,6 +6,8 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -23,14 +25,19 @@ class DTSTracker private constructor(
     private var screenCapture: DTSScreenViewCapture? = null
     internal val cartCapture: DTSCartUpdateCapture
     internal val customizationCapture: DTSCustomizationCapture
-    internal val errorCapture: DTSErrorCapture
+    internal val errorCapture: DTSErrorCapture = DTSErrorCapture { type, props -> track(type, "", props) }
+
+    // New components
+    private val networkDetector = DTSNetworkDetector(application)
+    private val lifecycleTracker = DTSLifecycleTracker { type, props -> track(type, "", props) }
+    private val offlineBuffer = DTSOfflineBuffer(application)
 
     @Volatile private var started = false
     @Volatile private var disposed = false
 
-    /** Authenticated user ID — merged into every event's properties as "user_id". */
+    /** Authenticated user ID — merged into every event's properties as "user_id". */
     @Volatile var userId: String? = null
-    /** Current cart ID — merged into every event's properties as "cart_id" when set. */
+    /** Current cart ID — merged into every event's properties as "cart_id" when set. */
     @Volatile var cartId: String? = null
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -57,9 +64,8 @@ class DTSTracker private constructor(
         sessionId = DTSStorage.getSessionId()
         DTSStorage.rotateSessionId()
 
-        cartCapture = DTSCartUpdateCapture { type, props -> track(type, "", props) }
-        customizationCapture = DTSCustomizationCapture { type, props -> track(type, "", props) }
-        errorCapture = DTSErrorCapture { type, props -> track(type, "", props) }
+        cartCapture = DTSCartUpdateCapture { type, props -> trackTyped(type.value, "", props) }
+        customizationCapture = DTSCustomizationCapture { type, props -> trackTyped(type.value, "", props) }
     }
 
     // ---- Public API ----
@@ -68,20 +74,55 @@ class DTSTracker private constructor(
         if (started || disposed) return
         started = true
 
-        screenCapture = DTSScreenViewCapture { type, props -> 
+        screenCapture = DTSScreenViewCapture { type, props ->
             track(type, props["screen"] ?: "", props)
         }
         screenCapture?.register(application)
 
         errorCapture.install()
+        lifecycleTracker.register(application)
+        networkDetector.start()
 
+        // Flush any persisted offline events on start
+        scope.launch { flushOfflineBuffer() }
+
+        // Adaptive flush loop — respects network type for interval
         flushJob = scope.launch {
             while (isActive && !disposed) {
-                delay(config.flushIntervalMs)
+                val interval = config.flushIntervalMs * networkDetector.flushIntervalMultiplier
+                delay(interval)
                 flush()
             }
         }
     }
+
+    // ---- Identity ----
+
+    /** Link the current anonymous session to a logged-in user. */
+    fun identify(userId: String, traits: Map<String, String> = emptyMap()) {
+        val previousUserId = this.userId
+        this.userId = userId
+        val props = mutableMapOf<String, JsonElement>(
+            "user_id" to JsonPrimitive(userId),
+            "is_new_identification" to JsonPrimitive(previousUserId == null || previousUserId != userId),
+        )
+        if (previousUserId != null) {
+            props["previous_user_id"] = JsonPrimitive(previousUserId)
+        }
+        traits.forEach { (k, v) -> props[k] = JsonPrimitive(v) }
+        trackTyped("identify", "", props)
+    }
+
+    /** Clear the current identity (on logout). */
+    fun resetIdentity() {
+        val prev = userId
+        userId = null
+        if (prev != null) {
+            track("logout", "", mapOf("user_id" to prev))
+        }
+    }
+
+    // ---- Tracking ----
 
     fun track(type: DTSEventType, page: String = "", properties: Map<String, String> = emptyMap()) {
         track(type.value, page, properties)
@@ -96,11 +137,28 @@ class DTSTracker private constructor(
         val event = DTSEvent.create(eventType, sessionId, anonymousUserId, page, enriched)
         synchronized(eventQueue) {
             eventQueue.add(event)
-            if (eventQueue.size >= config.maxBatchSize) {
+            if (eventQueue.size >= effectiveMaxBatchSize) {
                 scope.launch { flush() }
             }
         }
     }
+
+    /** Track an event with fully typed properties (numbers, booleans, nested objects). */
+    fun trackTyped(eventType: String, page: String = "", properties: Map<String, JsonElement> = emptyMap()) {
+        if (disposed) return
+        val enriched = properties.toMutableMap()
+        userId?.let { enriched["user_id"] = JsonPrimitive(it) }
+        cartId?.let { enriched["cart_id"] = JsonPrimitive(it) }
+        val event = DTSEvent.createTyped(eventType, sessionId, anonymousUserId, page, enriched)
+        synchronized(eventQueue) {
+            eventQueue.add(event)
+            if (eventQueue.size >= effectiveMaxBatchSize) {
+                scope.launch { flush() }
+            }
+        }
+    }
+
+    // ---- Flush ----
 
     suspend fun flush() {
         val batch: List<DTSEvent>
@@ -112,21 +170,45 @@ class DTSTracker private constructor(
 
         if (batch.isEmpty()) return
 
+        if (!networkDetector.isOnline) {
+            // Offline: persist to buffer
+            offlineBuffer.persist(batch)
+            return
+        }
+
         try {
             DTSRetry.withBackoff(config.maxRetries) {
                 sendBatch(batch)
             }
         } catch (e: Throwable) {
-            synchronized(eventQueue) {
-                eventQueue.addAll(0, batch)
+            // Persist failed batch to offline buffer for later retry
+            offlineBuffer.persist(batch)
+            logError("Flush failed, events persisted to offline buffer", e)
+        }
+    }
+
+    /** Attempt to flush all persisted offline events. */
+    suspend fun flushOfflineBuffer() {
+        val offline = offlineBuffer.loadAll()
+        if (offline.isEmpty()) return
+        if (!networkDetector.isOnline) return
+
+        try {
+            DTSRetry.withBackoff(config.maxRetries) {
+                sendBatch(offline)
             }
-            logError("Flush failed, events re-queued", e)
+            offlineBuffer.clear()
+        } catch (e: Throwable) {
+            // Keep in buffer, will retry later
+            logError("Offline buffer flush failed", e)
         }
     }
 
     fun dispose() {
         disposed = true
         flushJob?.cancel()
+        lifecycleTracker.unregister(application)
+        networkDetector.stop()
         screenCapture = null
         // Final best-effort flush before teardown
         try {
@@ -138,6 +220,10 @@ class DTSTracker private constructor(
     }
 
     // ---- Private ----
+
+    /** Effective max batch size, scaled by network type. */
+    private val effectiveMaxBatchSize: Int
+        get() = config.maxBatchSize * networkDetector.batchSizeMultiplier
 
     private fun sendBatch(batch: List<DTSEvent>) {
         val url = URL("${config.normalizedEndpointUrl}/events")
@@ -177,7 +263,6 @@ class DTSTracker private constructor(
 
     private fun logError(message: String, error: Throwable) {
         Log.e("DTSRIS", "$message: ${error.message}")
-        // Log full chain for SSL/debugging
         var cause: Throwable? = error.cause
         while (cause != null) {
             Log.e("DTSRIS", "  caused by: ${cause.message}")

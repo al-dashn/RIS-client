@@ -4,7 +4,7 @@ export function installScreenViewCapture(
   const handler = (): void => {
     // Use pathname only — query strings and fragments may contain PII
     emit('screen_view', {
-      path: window.location.pathname,
+      screen: window.location.pathname,
       title: document.title,
     });
   };

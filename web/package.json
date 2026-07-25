@@ -1,16 +1,37 @@
 {
   "name": "@dtsris/web-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DTS RIS Web SDK — auto-capture analytics (zero-PII)",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/al-dashn/RIS-client.git",
+    "directory": "web"
+  },
+  "keywords": ["analytics", "tracking", "events", "gdpr", "zero-pii", "dts-ris"],
+  "author": "DTS RIS Team",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./umd": "./dist-umd/dtsris-tracker.umd.js"
+  },
   "files": [
-    "dist"
+    "dist",
+    "dist-umd"
   ],
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "build:umd": "node build-umd.mjs",
+    "build:all": "npm run build && npm run build:umd",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build:all"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",

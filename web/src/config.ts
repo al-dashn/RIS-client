@@ -4,6 +4,16 @@ export interface DTSConfigInput {
   maxRetries?: number;
   maxBatchSize?: number;
   flushIntervalMs?: number;
+  /** Auto-capture click events on interactive elements. Default: true */
+  autoCaptureClicks?: boolean;
+  /** Auto-capture form submissions and field interactions. Default: true */
+  autoCaptureForms?: boolean;
+  /** Auto-capture scroll depth milestones. Default: true */
+  autoCaptureScroll?: boolean;
+  /** Auto-capture Web Vitals (LCP, FCP, CLS, TTFB, INP). Default: true */
+  autoCapturePerformance?: boolean;
+  /** Require GDPR consent before tracking. Default: false */
+  consentRequired?: boolean;
 }
 
 export interface DTSConfig {
@@ -12,12 +22,22 @@ export interface DTSConfig {
   readonly maxRetries: number;
   readonly maxBatchSize: number;
   readonly flushIntervalMs: number;
+  readonly autoCaptureClicks: boolean;
+  readonly autoCaptureForms: boolean;
+  readonly autoCaptureScroll: boolean;
+  readonly autoCapturePerformance: boolean;
+  readonly consentRequired: boolean;
 }
 
-const DEFAULTS: Pick<DTSConfig, 'maxRetries' | 'maxBatchSize' | 'flushIntervalMs'> = {
+const DEFAULTS: Required<Pick<DTSConfig, 'maxRetries' | 'maxBatchSize' | 'flushIntervalMs' | 'autoCaptureClicks' | 'autoCaptureForms' | 'autoCaptureScroll' | 'autoCapturePerformance' | 'consentRequired'>> = {
   maxRetries: 5,
   maxBatchSize: 20,
   flushIntervalMs: 5000,
+  autoCaptureClicks: true,
+  autoCaptureForms: true,
+  autoCaptureScroll: true,
+  autoCapturePerformance: true,
+  consentRequired: false,
 };
 
 export function resolveConfig(input: DTSConfigInput): DTSConfig {
@@ -34,5 +54,10 @@ export function resolveConfig(input: DTSConfigInput): DTSConfig {
     maxRetries: input.maxRetries ?? DEFAULTS.maxRetries,
     maxBatchSize: input.maxBatchSize ?? DEFAULTS.maxBatchSize,
     flushIntervalMs: input.flushIntervalMs ?? DEFAULTS.flushIntervalMs,
+    autoCaptureClicks: input.autoCaptureClicks ?? DEFAULTS.autoCaptureClicks,
+    autoCaptureForms: input.autoCaptureForms ?? DEFAULTS.autoCaptureForms,
+    autoCaptureScroll: input.autoCaptureScroll ?? DEFAULTS.autoCaptureScroll,
+    autoCapturePerformance: input.autoCapturePerformance ?? DEFAULTS.autoCapturePerformance,
+    consentRequired: input.consentRequired ?? DEFAULTS.consentRequired,
   };
 }

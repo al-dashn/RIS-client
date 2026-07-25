@@ -25,6 +25,15 @@ public final class DTSTracker: @unchecked Sendable {
     }()
     private var disposed = false
 
+    // New components
+    private let networkDetector = DTSNetworkDetector()
+    private lazy var lifecycleTracker: DTSLifecycleTracker = {
+        DTSLifecycleTracker { [weak self] type, props in
+            self?.track(eventType: type, page: "", properties: props)
+        }
+    }()
+    private let offlineBuffer = DTSOfflineBuffer()
+
     /// Authenticated user ID — merged into every event's properties as "user_id".
     public var userId: String?
     /// Current cart ID — merged into every event's properties as "cart_id" when set.
@@ -61,8 +70,17 @@ public final class DTSTracker: @unchecked Sendable {
             self?.track(type: type, page: page, properties: props)
         }
 
+        networkDetector.start()
+        lifecycleTracker.register()
+
+        // Flush any persisted offline events on start
+        queue.async { [weak self] in
+            self?.flushOfflineBuffer()
+        }
+
         let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now() + config.flushInterval, repeating: config.flushInterval)
+        let adaptiveInterval = config.flushInterval * networkDetector.flushIntervalMultiplier
+        timer.schedule(deadline: .now() + adaptiveInterval, repeating: adaptiveInterval)
         timer.setEventHandler { [weak self] in
             self?.flush()
         }
@@ -93,9 +111,39 @@ public final class DTSTracker: @unchecked Sendable {
         queue.async { [weak self] in
             guard let self = self, !self.disposed else { return }
             self.eventQueue.append(event)
-            if self.eventQueue.count >= self.config.maxBatchSize {
+            let effectiveMax = self.config.maxBatchSize * self.networkDetector.batchSizeMultiplier
+            if self.eventQueue.count >= effectiveMax {
                 self.flush()
             }
+        }
+    }
+
+    // MARK: - Identity
+
+    /// Link the current anonymous session to a logged-in user. Emits an `identify` event.
+    public func identify(userId: String, traits: [String: DTSEventValue] = [:]) {
+        let previousUserId = self.userId
+        self.userId = userId
+
+        var props: [String: DTSEventValue] = [
+            "user_id": .string(userId),
+            "is_new_identification": .bool(previousUserId == nil || previousUserId != userId),
+        ]
+        if let prev = previousUserId {
+            props["previous_user_id"] = .string(prev)
+        }
+        for (key, value) in traits {
+            props[key] = value
+        }
+        track(eventType: "identify", page: "", properties: props)
+    }
+
+    /// Clear the current identity (on logout). Emits a `logout` event.
+    public func resetIdentity() {
+        let prev = userId
+        userId = nil
+        if let prev = prev {
+            track(eventType: "logout", page: "", properties: ["user_id": .string(prev)])
         }
     }
 
@@ -133,14 +181,19 @@ public final class DTSTracker: @unchecked Sendable {
             let batch = self.eventQueue
             self.eventQueue = []
 
+            // Offline: persist to buffer
+            guard self.networkDetector.isOnline else {
+                self.offlineBuffer.persist(batch)
+                return
+            }
+
             let urlString = "\(self.config.endpointUrl)/events"
             let maxRetries = self.config.maxRetries
             let apiKey = self.config.apiKey
 
-            // Capture batch as Data to avoid non-Sendable capture in @Sendable Task
             let encoder = JSONEncoder()
             guard let batchData = try? encoder.encode(["events": batch]) else {
-                self.eventQueue = batch + self.eventQueue
+                self.offlineBuffer.persist(batch)
                 return
             }
 
@@ -152,14 +205,40 @@ public final class DTSTracker: @unchecked Sendable {
                     }
                 } catch {
                     self.queue.async {
+                        // Persist failed batch to offline buffer
                         let decoder = JSONDecoder()
                         if let wrapper = try? decoder.decode([String: [DTSEvent]].self, from: batchData),
                            let events = wrapper["events"] {
-                            self.eventQueue = events + self.eventQueue
+                            self.offlineBuffer.persist(events)
                         }
                     }
-                    Self.logError("Flush failed, events re-queued", error: error)
+                    Self.logError("Flush failed, events persisted to offline buffer", error: error)
                 }
+            }
+        }
+    }
+
+    /// Attempt to flush all persisted offline events.
+    public func flushOfflineBuffer() {
+        let offline = offlineBuffer.loadAll()
+        guard !offline.isEmpty, networkDetector.isOnline else { return }
+
+        let urlString = "\(self.config.endpointUrl)/events"
+        let maxRetries = self.config.maxRetries
+        let apiKey = self.config.apiKey
+
+        let encoder = JSONEncoder()
+        guard let batchData = try? encoder.encode(["events": offline]) else { return }
+
+        Task { [weak self] in
+            guard let self = self else { return }
+            do {
+                try await DTSRetry.withBackoff(maxRetries: maxRetries) {
+                    try await self.sendBatchData(batchData, url: urlString, apiKey: apiKey)
+                }
+                self.offlineBuffer.clear()
+            } catch {
+                Self.logError("Offline buffer flush failed", error: error)
             }
         }
     }
@@ -168,6 +247,8 @@ public final class DTSTracker: @unchecked Sendable {
         disposed = true
         flushTimer?.cancel()
         flushTimer = nil
+        lifecycleTracker.unregister()
+        networkDetector.stop()
         screenCapture = nil
         errorCapture.markCleanTermination()
         flush()
