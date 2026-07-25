@@ -1,4 +1,11 @@
 node_modules/
 dist/
+dist-umd/
 .env
 *.log
+
+# Android
+android/.gradle/
+android/build/
+android/sdk/build/
+android/local.properties
