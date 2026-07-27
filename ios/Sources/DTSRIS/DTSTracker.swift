@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(AdServices)
+import AdServices
+#endif
 
 public final class DTSTracker: @unchecked Sendable {
     private let config: DTSConfig
@@ -72,6 +75,26 @@ public final class DTSTracker: @unchecked Sendable {
 
         networkDetector.start()
         lifecycleTracker.register()
+
+        // Capture install attribution on first launch if configured
+        if config.captureInstallReferrer && !DTSStorage.hasInstallBeenTracked() {
+            var attributionToken: String? = nil
+            #if canImport(AdServices)
+            if #available(iOS 14.3, *) {
+                do {
+                    attributionToken = try AAAttribution.attributionToken()
+                } catch {
+                    // Silently ignore — token unavailable (e.g. simulator, non-App-Store install)
+                }
+            }
+            #endif
+
+            if let token = attributionToken {
+                track(eventType: "install", page: "", properties: ["attribution_token": .string(token)])
+            }
+
+            DTSStorage.markInstallTracked()
+        }
 
         // Flush any persisted offline events on start
         queue.async { [weak self] in
