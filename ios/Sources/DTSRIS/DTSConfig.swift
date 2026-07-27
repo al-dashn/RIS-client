@@ -6,13 +6,15 @@ public struct DTSConfig {
     public let maxRetries: Int
     public let maxBatchSize: Int
     public let flushInterval: TimeInterval
+    public let captureInstallReferrer: Bool
 
     public init(
         apiKey: String,
         endpointUrl: String,
         maxRetries: Int = 5,
         maxBatchSize: Int = 20,
-        flushInterval: TimeInterval = 5.0
+        flushInterval: TimeInterval = 5.0,
+        captureInstallReferrer: Bool = false
     ) {
         precondition(!apiKey.isEmpty, "DTS RIS: apiKey is required")
         precondition(!endpointUrl.isEmpty, "DTS RIS: endpointUrl is required")
@@ -22,5 +24,6 @@ public struct DTSConfig {
         self.maxRetries = max(1, maxRetries)
         self.maxBatchSize = max(1, maxBatchSize)
         self.flushInterval = max(1.0, flushInterval)
+        self.captureInstallReferrer = captureInstallReferrer
     }
 }

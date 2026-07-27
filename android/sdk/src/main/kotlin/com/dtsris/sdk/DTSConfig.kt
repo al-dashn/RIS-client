@@ -7,6 +7,7 @@ data class DTSConfig(
     val maxBatchSize: Int = 20,
     val flushIntervalMs: Long = 5000L,
     val allowInsecureSsl: Boolean = false,
+    val captureInstallReferrer: Boolean = false,
 ) {
     init {
         require(apiKey.isNotBlank()) { "DTS RIS: apiKey is required" }

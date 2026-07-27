@@ -83,6 +83,22 @@ class DTSTracker private constructor(
         lifecycleTracker.register(application)
         networkDetector.start()
 
+        // Capture install attribution on first launch if configured
+        if (config.captureInstallReferrer && !DTSStorage.hasInstallBeenTracked()) {
+            scope.launch {
+                try {
+                    val referrer = DTSInstallReferrer.getReferrer(application)
+                    if (referrer != null) {
+                        track("install", "", mapOf("referrer" to referrer))
+                    }
+                } catch (_: Exception) {
+                    // Silently ignore — never crash the host app
+                } finally {
+                    DTSStorage.markInstallTracked()
+                }
+            }
+        }
+
         // Flush any persisted offline events on start
         scope.launch { flushOfflineBuffer() }
 

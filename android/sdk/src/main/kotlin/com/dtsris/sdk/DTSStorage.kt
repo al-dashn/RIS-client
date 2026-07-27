@@ -8,6 +8,7 @@ internal object DTSStorage {
     private const val PREFS_NAME = "com.dtsris.prefs"
     private const val KEY_UID = "anonymousUserId"
     private const val KEY_SID = "sessionId"
+    private const val KEY_INSTALL_TRACKED = "installTracked"
 
     @Volatile private var prefs: SharedPreferences? = null
     @Volatile private var initialized = false
@@ -44,6 +45,16 @@ internal object DTSStorage {
     fun rotateSessionId() {
         val p = prefs ?: return
         p.edit().putString(KEY_SID, UUID.randomUUID().toString()).apply()
+    }
+
+    fun hasInstallBeenTracked(): Boolean {
+        val p = prefs ?: return false
+        return p.getBoolean(KEY_INSTALL_TRACKED, false)
+    }
+
+    fun markInstallTracked() {
+        val p = prefs ?: return
+        p.edit().putBoolean(KEY_INSTALL_TRACKED, true).apply()
     }
 
     private var fallbackUid: String? = null

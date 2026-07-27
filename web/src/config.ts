@@ -14,6 +14,8 @@ export interface DTSConfigInput {
   autoCapturePerformance?: boolean;
   /** Require GDPR consent before tracking. Default: false */
   consentRequired?: boolean;
+  /** Capture install referrer on first launch. Emits an `install` event with referrer data. Default: false */
+  captureInstallReferrer?: boolean;
 }
 
 export interface DTSConfig {
@@ -27,9 +29,10 @@ export interface DTSConfig {
   readonly autoCaptureScroll: boolean;
   readonly autoCapturePerformance: boolean;
   readonly consentRequired: boolean;
+  readonly captureInstallReferrer: boolean;
 }
 
-const DEFAULTS: Required<Pick<DTSConfig, 'maxRetries' | 'maxBatchSize' | 'flushIntervalMs' | 'autoCaptureClicks' | 'autoCaptureForms' | 'autoCaptureScroll' | 'autoCapturePerformance' | 'consentRequired'>> = {
+const DEFAULTS: Required<Pick<DTSConfig, 'maxRetries' | 'maxBatchSize' | 'flushIntervalMs' | 'autoCaptureClicks' | 'autoCaptureForms' | 'autoCaptureScroll' | 'autoCapturePerformance' | 'consentRequired' | 'captureInstallReferrer'>> = {
   maxRetries: 5,
   maxBatchSize: 20,
   flushIntervalMs: 5000,
@@ -38,6 +41,7 @@ const DEFAULTS: Required<Pick<DTSConfig, 'maxRetries' | 'maxBatchSize' | 'flushI
   autoCaptureScroll: true,
   autoCapturePerformance: true,
   consentRequired: false,
+  captureInstallReferrer: false,
 };
 
 export function resolveConfig(input: DTSConfigInput): DTSConfig {
@@ -59,5 +63,6 @@ export function resolveConfig(input: DTSConfigInput): DTSConfig {
     autoCaptureScroll: input.autoCaptureScroll ?? DEFAULTS.autoCaptureScroll,
     autoCapturePerformance: input.autoCapturePerformance ?? DEFAULTS.autoCapturePerformance,
     consentRequired: input.consentRequired ?? DEFAULTS.consentRequired,
+    captureInstallReferrer: input.captureInstallReferrer ?? DEFAULTS.captureInstallReferrer,
   };
 }

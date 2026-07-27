@@ -33,6 +33,32 @@ export function getAnonymousUserId(): string {
   }
 }
 
+const INSTALL_TRACKED_KEY = `${STORAGE_KEY_PREFIX}install_tracked`;
+
+/**
+ * Check whether we already emitted an `install` event for this browser.
+ * Uses localStorage so the flag persists across sessions.
+ */
+export function hasInstallBeenTracked(): boolean {
+  try {
+    return localStorage.getItem(INSTALL_TRACKED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Persist the flag so we never emit a second `install` event.
+ * Safe to call multiple times — always a no-op after the first call.
+ */
+export function markInstallTracked(): void {
+  try {
+    localStorage.setItem(INSTALL_TRACKED_KEY, '1');
+  } catch {
+    // localStorage unavailable — flag won't persist, but it's a one-time per-browser concern
+  }
+}
+
 export function getSessionId(): string {
   const key = `${STORAGE_KEY_PREFIX}sid`;
   try {

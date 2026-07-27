@@ -69,4 +69,5 @@ afterEvaluate {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("com.android.installreferrer:installreferrer:2.2")
 }

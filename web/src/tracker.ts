@@ -1,5 +1,5 @@
 import { DTSConfig, DTSConfigInput, resolveConfig } from './config';
-import { getAnonymousUserId, getSessionId } from './storage';
+import { getAnonymousUserId, getSessionId, hasInstallBeenTracked, markInstallTracked } from './storage';
 import { createEvent, DTSEvent, EventType } from './events';
 import { retryWithBackoff } from './retry';
 import { installScreenViewCapture } from './auto-capture/screen-view';
@@ -82,6 +82,16 @@ export class DTSTracker {
       this.teardowns.push(
         installPerformanceCapture((eventType, props) => this.emitter(eventType, props)),
       );
+    }
+
+    // Capture install attribution on first launch if configured
+    if (this.config.captureInstallReferrer && !hasInstallBeenTracked()) {
+      try {
+        this.captureInstallEvent();
+      } catch {
+        // Silently ignore — never crash the host app
+      }
+      markInstallTracked();
     }
 
     // Start flush timer — flush() handles errors internally
@@ -197,6 +207,31 @@ export class DTSTracker {
     this.teardowns = [];
     // Final flush attempt (fire-and-forget, errors handled internally)
     this.flush();
+  }
+
+  private captureInstallEvent(): void {
+    const referrer = document.referrer || undefined;
+
+    // Collect UTM / campaign parameters from the current URL
+    const params = new URLSearchParams(window.location.search);
+    const deepLinkData: Record<string, string> = {};
+    const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'campaign_id'];
+    for (const key of utmKeys) {
+      const val = params.get(key);
+      if (val) {
+        deepLinkData[key] = val;
+      }
+    }
+
+    const properties: Record<string, unknown> = {};
+    if (referrer) {
+      properties['referrer'] = referrer;
+    }
+    if (Object.keys(deepLinkData).length > 0) {
+      properties['deep_link_data'] = deepLinkData;
+    }
+
+    this.track('install', properties);
   }
 
   private emitter(eventType: EventType, props: Record<string, unknown>): void {
