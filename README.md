@@ -46,7 +46,7 @@ maven { url = uri("https://jitpack.io") }
 
 Add to module `build.gradle.kts`:
 ```kotlin
-implementation("com.github.al-dashn:RIS-client:0.3.0")
+implementation("com.github.al-dashn:RIS-client:0.3.1")
 ```
 
 ---

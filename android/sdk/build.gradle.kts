@@ -38,7 +38,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.dashn"
                 artifactId = "sdk"
-                version = project.findProperty("VERSION_NAME") as? String ?: "0.3.0"
+                version = project.findProperty("VERSION_NAME") as? String ?: "0.3.1"
 
                 pom {
                     name.set("DTS RIS Android SDK")

@@ -1,4 +1,4 @@
-export { DTSTracker } from './tracker';
+export { DTSTracker } from './tracker.js';
 export type {
   DTSConfig,
   DTSConfigInput,
@@ -8,6 +8,6 @@ export type {
   UserTraits,
   ConsentCategory,
   ConsentState,
-} from './tracker';
-export { captureErrorBoundary } from './auto-capture/error-boundary';
-export type { ErrorBoundaryReport } from './auto-capture/error-boundary';
+} from './tracker.js';
+export { captureErrorBoundary } from './auto-capture/error-boundary.js';
+export type { ErrorBoundaryReport } from './auto-capture/error-boundary.js';

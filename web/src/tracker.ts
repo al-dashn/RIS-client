@@ -1,22 +1,22 @@
-import { DTSConfig, DTSConfigInput, resolveConfig } from './config';
-import { getAnonymousUserId, getSessionId, hasInstallBeenTracked, markInstallTracked } from './storage';
-import { createEvent, DTSEvent, EventType } from './events';
-import { retryWithBackoff } from './retry';
-import { installScreenViewCapture } from './auto-capture/screen-view';
-import { installCartUpdateCapture } from './auto-capture/cart-update';
-import { installCustomizationCapture } from './auto-capture/customization';
-import { installErrorCapture } from './auto-capture/error';
-import { installClickCapture } from './auto-capture/click';
-import { installFormCapture } from './auto-capture/form';
-import { installScrollDepthCapture } from './auto-capture/scroll';
-import { installPerformanceCapture } from './auto-capture/performance';
+import { DTSConfig, DTSConfigInput, resolveConfig } from './config.js';
+import { getAnonymousUserId, getSessionId, hasInstallBeenTracked, markInstallTracked } from './storage.js';
+import { createEvent, DTSEvent, EventType } from './events.js';
+import { retryWithBackoff } from './retry.js';
+import { installScreenViewCapture } from './auto-capture/screen-view.js';
+import { installCartUpdateCapture } from './auto-capture/cart-update.js';
+import { installCustomizationCapture } from './auto-capture/customization.js';
+import { installErrorCapture } from './auto-capture/error.js';
+import { installClickCapture } from './auto-capture/click.js';
+import { installFormCapture } from './auto-capture/form.js';
+import { installScrollDepthCapture } from './auto-capture/scroll.js';
+import { installPerformanceCapture } from './auto-capture/performance.js';
 import {
   identify,
   resetIdentity,
   getIdentity,
   type IdentityState,
   type UserTraits,
-} from './identity';
+} from './identity.js';
 import {
   grantConsent,
   revokeConsent,
@@ -24,7 +24,7 @@ import {
   isTrackingAllowed,
   type ConsentCategory,
   type ConsentState,
-} from './consent';
+} from './consent.js';
 
 export type { DTSConfig, DTSConfigInput, DTSEvent, EventType, IdentityState, UserTraits, ConsentCategory, ConsentState };
 
