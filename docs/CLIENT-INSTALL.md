@@ -22,32 +22,7 @@ Provide both in the welcome/onboarding email along with this guide.
 
 ## 1. Web SDK
 
-Published to **GitHub Packages** (npm registry: `npm.pkg.github.com`).
-
-### One-time setup (GitHub access)
-
-The package is private, so the customer's developers need a GitHub
-Personal Access Token (PAT) with the `read:packages` scope.
-
-1. Create a PAT: GitHub → Settings → Developer settings → Personal access tokens.
-2. Grant `read:packages`.
-3. Point npm at GitHub Packages for the `@al-dashn` scope:
-
-   ```bash
-   npm config set @al-dashn:registry https://npm.pkg.github.com
-   ```
-
-4. Authenticate (use the PAT as the password):
-
-   ```bash
-   npm login --registry=https://npm.pkg.github.com
-   # Username: <their GitHub username>
-   # Password: <the PAT, not their GitHub password>
-   ```
-
-> ⚠️ The customer's GitHub account must be granted access to the package.
-> DTS adds their GitHub username/team to the `@al-dashn/web-sdk` package's
-> access list.
+Published to the public **npm** registry (`registry.npmjs.org`).
 
 ### Install & initialize
 
@@ -160,7 +135,7 @@ DTSTracker.initialize(config: DTSConfig(
 
 | Platform | Package / coordinate | Registry |
 |----------|----------------------|----------|
-| Web      | `@al-dashn/web-sdk` | GitHub Packages (`npm.pkg.github.com`) |
+| Web      | `@al-dashn/web-sdk` | npm (`registry.npmjs.org`) |
 | Android  | `com.github.al-dashn:RIS-client:0.3.1` | JitPack |
 | iOS      | `DTSRIS` | Swift Package Manager (GitHub tag) |
 
@@ -170,7 +145,7 @@ DTSTracker.initialize(config: DTSConfig(
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Web: `401 Unauthorized` on `npm install` | Missing/invalid PAT, or account not granted access | Re-run `npm login`, confirm `read:packages`, confirm DTS granted access |
+| Web: `404 Not Found` on `npm install` | Package not yet published or wrong name | Confirm `@al-dashn/web-sdk` exists on npmjs.com and you typed the name correctly |
 | Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.1` tag exists on `al-dashn/RIS-client` |
 | iOS: package not found in Xcode | Repo/tag not reachable | Confirm `https://github.com/al-dashn/RIS-client` is public or the customer has repo read access |
 | Events not arriving | Wrong endpoint URL or API key | Verify both values against the onboarding email |

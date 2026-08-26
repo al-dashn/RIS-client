@@ -10,14 +10,9 @@ is collected under any code path.
 
 ## 🚀 Quick Start
 
-### Web (GitHub Packages)
+### Web (npm) 
 
 ```bash
-# One-time: point npm at GitHub Packages for the @al-dashn scope
-npm config set @al-dashn:registry https://npm.pkg.github.com
-# One-time: authenticate with a GitHub PAT that has read:packages
-npm login --registry=https://npm.pkg.github.com
-
 npm install @al-dashn/web-sdk
 ```
 
@@ -206,6 +201,6 @@ per-platform install/init, and troubleshooting), see
  git tag vX.Y.Z && git push origin vX.Y.Z
 
 # Automated on tag push (see .github/workflows/build.yml):
-#   Web     → published to GitHub Packages (npm.pkg.github.com)
+#   Web     → published to npm (registry.npmjs.org)
 #   Android → JitPack auto-builds from the tag
 #   iOS     → consumed via SPM from the tag
