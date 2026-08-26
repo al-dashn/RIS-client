@@ -1,6 +1,6 @@
 {
   "name": "@al-dashn/web-sdk",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "DTS RIS Web SDK — auto-capture analytics (zero-PII)",
   "license": "MIT",
   "repository": {
