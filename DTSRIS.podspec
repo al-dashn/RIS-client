@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'DTSRIS'
-  s.version          = '0.3.2'
+  s.version          = '0.3.3'
   s.summary          = 'DTS RIS iOS SDK — zero-PII analytics auto-capture'
   s.description      = <<-DESC
     DTS RIS iOS SDK automatically captures anonymous user-journey events

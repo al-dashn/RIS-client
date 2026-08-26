@@ -30,15 +30,16 @@ android {
     }
 }
 
-// Maven publication — compatible with JitPack and Maven Central
+// Maven publication — compatible with JitPack and Maven Central.
+// JitPack sets GROUP/ARTIFACT/VERSION env vars; fall back to sane defaults locally.
 afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.dashn"
-                artifactId = "sdk"
-                version = project.findProperty("VERSION_NAME") as? String ?: "0.3.2"
+                groupId = System.getenv("GROUP") ?: "com.github.al-dashn"
+                artifactId = System.getenv("ARTIFACT") ?: "RIS-client"
+                version = System.getenv("VERSION") ?: project.findProperty("VERSION_NAME") as? String ?: "0.3.3"
 
                 pom {
                     name.set("DTS RIS Android SDK")

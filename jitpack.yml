@@ -1,0 +1,12 @@
+# JitPack configuration — lives at the REPO ROOT (JitPack ignores android/jitpack.yml).
+# The Android Gradle project lives in the `android/` subdirectory, so we cd into it
+# and publish the :sdk module to the local Maven repo (~/.m2/repository), which is
+# where JitPack collects artifacts from.
+#
+# Customers then use:
+#   implementation("com.github.al-dashn:RIS-client:0.3.3")
+jdk:
+  - openjdk21
+install:
+  - cd android
+  - ./gradlew :sdk:publishToMavenLocal
