@@ -105,7 +105,7 @@ In the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.al-dashn:RIS-client:0.2.0")
+    implementation("com.github.al-dashn:RIS-client:0.3.0")
 }
 ```
 
@@ -161,7 +161,7 @@ DTSTracker.initialize(config: DTSConfig(
 | Platform | Package / coordinate | Registry |
 |----------|----------------------|----------|
 | Web      | `@al-dashn/web-sdk` | GitHub Packages (`npm.pkg.github.com`) |
-| Android  | `com.github.al-dashn:RIS-client:0.2.0` | JitPack |
+| Android  | `com.github.al-dashn:RIS-client:0.3.0` | JitPack |
 | iOS      | `DTSRIS` | Swift Package Manager (GitHub tag) |
 
 ---
@@ -171,6 +171,6 @@ DTSTracker.initialize(config: DTSConfig(
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Web: `401 Unauthorized` on `npm install` | Missing/invalid PAT, or account not granted access | Re-run `npm login`, confirm `read:packages`, confirm DTS granted access |
-| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.2.0` tag exists on `al-dashn/RIS-client` |
+| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.0` tag exists on `al-dashn/RIS-client` |
 | iOS: package not found in Xcode | Repo/tag not reachable | Confirm `https://github.com/al-dashn/RIS-client` is public or the customer has repo read access |
 | Events not arriving | Wrong endpoint URL or API key | Verify both values against the onboarding email |
