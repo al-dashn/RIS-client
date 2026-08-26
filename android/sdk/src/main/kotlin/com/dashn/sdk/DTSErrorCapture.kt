@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 internal class DTSErrorCapture(
     private val emit: (DTSEventType, Map<String, String>) -> Unit,

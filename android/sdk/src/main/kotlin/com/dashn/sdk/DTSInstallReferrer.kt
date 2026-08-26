@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 import android.content.Context
 import android.util.Log
@@ -23,41 +23,40 @@ internal object DTSInstallReferrer {
     suspend fun getReferrer(context: Context): String? {
         return try {
             val client = InstallReferrerClient.newBuilder(context).build()
-            val details = connectAndGetReferrer(client)
+            val referrer = connectAndGetReferrer(client)
             client.endConnection()
-            details.installReferrer?.takeIf { it.isNotBlank() }
+            referrer?.takeIf { it.isNotBlank() }
         } catch (e: Exception) {
             Log.w(TAG, "Install referrer unavailable: ${e.message}")
             null
         }
     }
 
-    private suspend fun connectAndGetReferrer(client: InstallReferrerClient): ReferrerDetails {
+    private suspend fun connectAndGetReferrer(client: InstallReferrerClient): String? {
         return suspendCancellableCoroutine { continuation ->
             try {
                 client.startConnection(object : InstallReferrerStateListener {
                     override fun onInstallReferrerSetupFinished(responseCode: Int) {
                         if (responseCode == InstallReferrerClient.InstallReferrerResponse.OK) {
                             try {
-                                val details = client.installReferrer
-                                continuation.resume(details)
+                                continuation.resume(client.installReferrer.installReferrer)
                             } catch (e: Exception) {
-                                continuation.resume(ReferrerDetails("", 0L, 0L))
+                                continuation.resume(null)
                             }
                         } else {
                             Log.w(TAG, "Install referrer response code: $responseCode")
-                            continuation.resume(ReferrerDetails("", 0L, 0L))
+                            continuation.resume(null)
                         }
                     }
 
                     override fun onInstallReferrerServiceDisconnected() {
                         Log.w(TAG, "Install referrer service disconnected")
-                        continuation.resume(ReferrerDetails("", 0L, 0L))
+                        continuation.resume(null)
                     }
                 })
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to start install referrer connection: ${e.message}")
-                continuation.resume(ReferrerDetails("", 0L, 0L))
+                continuation.resume(null)
             }
         }
     }

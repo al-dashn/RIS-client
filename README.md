@@ -10,21 +10,26 @@ is collected under any code path.
 
 ## 🚀 Quick Start
 
-### Web
+### Web (GitHub Packages)
 
 ```bash
-npm install @dtsris/web-sdk
+# One-time: point npm at GitHub Packages for the @al-dashn scope
+npm config set @al-dashn:registry https://npm.pkg.github.com
+# One-time: authenticate with a GitHub PAT that has read:packages
+npm login --registry=https://npm.pkg.github.com
+
+npm install @al-dashn/web-sdk
 ```
 
 ```js
-import { DTSTracker } from '@dtsris/web-sdk';
+import { DTSTracker } from '@al-dashn/web-sdk';
 const tracker = new DTSTracker({ apiKey: '...', endpointUrl: '...' });
 tracker.start();
 ```
 
 ### iOS (Swift Package Manager)
 
-1. Xcode → File → Add Packages → `https://github.com/your-org/ris-client`
+1. Xcode → File → Add Packages → `https://github.com/al-dashn/RIS-client`
 2. Pick the `ios` target
 
 ```swift
@@ -41,7 +46,7 @@ maven { url = uri("https://jitpack.io") }
 
 Add to module `build.gradle.kts`:
 ```kotlin
-implementation("com.github.your-org:ris-client:0.2.0")
+implementation("com.github.al-dashn:RIS-client:0.2.0")
 ```
 
 ---
@@ -182,19 +187,25 @@ SDK (client) → POST /events (X-API-Key) → Redis Stream → PostgreSQL JSONB
 
 ---
 
-## 🚢 Releasing
+## � Client installation guide
+
+For a hand-off document to give to customers (includes GitHub PAT setup,
+per-platform install/init, and troubleshooting), see
+[docs/CLIENT-INSTALL.md](docs/CLIENT-INSTALL.md).
+
+---
+
+## �🚢 Releasing
 
 ```bash
 # 1. Bump versions:
 #    web/package.json → "version"
-#    DTSRIS.podspec    → s.version
 #    android/sdk/build.gradle.kts → VERSION_NAME
 
-# 2. Tag & push
-git tag vX.Y.Z && git push origin vX.Y.Z
+# 2. Tag & push — this triggers everything
+ git tag vX.Y.Z && git push origin vX.Y.Z
 
-# 3. Publish
-npm publish --access public          # Web
-pod trunk push DTSRIS.podspec        # iOS CocoaPods
-# Android: JitPack auto-builds from tag
-```
+# Automated on tag push (see .github/workflows/build.yml):
+#   Web     → published to GitHub Packages (npm.pkg.github.com)
+#   Android → JitPack auto-builds from the tag
+#   iOS     → consumed via SPM from the tag

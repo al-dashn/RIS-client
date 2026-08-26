@@ -1,5 +1,5 @@
 {
-  "name": "@dtsris/web-sdk",
+  "name": "@al-dashn/web-sdk",
   "version": "0.2.0",
   "description": "DTS RIS Web SDK — auto-capture analytics (zero-PII)",
   "license": "MIT",
@@ -26,6 +26,10 @@
     "dist",
     "dist-umd"
   ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "restricted"
+  },
   "scripts": {
     "build": "tsc",
     "build:umd": "node build-umd.mjs",

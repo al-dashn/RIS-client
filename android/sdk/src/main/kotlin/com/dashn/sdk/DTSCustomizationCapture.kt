@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive

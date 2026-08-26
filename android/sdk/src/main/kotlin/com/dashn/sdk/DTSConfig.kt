@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 data class DTSConfig(
     val apiKey: String,

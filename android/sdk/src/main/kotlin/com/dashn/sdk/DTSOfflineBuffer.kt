@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,4 +1,4 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 import kotlinx.coroutines.delay
 import kotlin.math.min

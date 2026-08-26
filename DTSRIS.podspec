@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   DESC
   s.homepage         = 'https://github.com/al-dashn/RIS-client'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'DTS RIS Team' => '' }
+  s.author           = { 'DTS RIS Team' => 'a.salvaggio@dashn.com' }
   s.source           = { :git => 'https://github.com/al-dashn/RIS-client.git', :tag => s.version.to_s }
   s.swift_versions   = ['5.9']
 

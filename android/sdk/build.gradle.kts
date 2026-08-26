@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dtsris.sdk"
+    namespace = "com.dashn.sdk"
     compileSdk = 35
 
     defaultConfig {
@@ -36,7 +36,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "com.dtsris"
+                groupId = "com.dashn"
                 artifactId = "sdk"
                 version = project.findProperty("VERSION_NAME") as? String ?: "0.2.0"
 

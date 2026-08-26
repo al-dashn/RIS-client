@@ -1,11 +1,11 @@
-package com.dtsris.sdk
+package com.dashn.sdk
 
 import android.content.Context
 import android.content.SharedPreferences
 import java.util.UUID
 
 internal object DTSStorage {
-    private const val PREFS_NAME = "com.dtsris.prefs"
+    private const val PREFS_NAME = "com.dashn.prefs"
     private const val KEY_UID = "anonymousUserId"
     private const val KEY_SID = "sessionId"
     private const val KEY_INSTALL_TRACKED = "installTracked"
