@@ -176,6 +176,13 @@ export class DTSTracker {
   async flush(): Promise<void> {
     if (this.disposed || this.eventQueue.length === 0) return;
 
+    await this.drainQueue();
+  }
+
+  /** Send everything currently queued. Shared by flush() and dispose(). */
+  private async drainQueue(): Promise<void> {
+    if (this.eventQueue.length === 0) return;
+
     const batch = this.eventQueue.splice(0);
     try {
       await retryWithBackoff(
@@ -205,8 +212,9 @@ export class DTSTracker {
       }
     }
     this.teardowns = [];
-    // Final flush attempt (fire-and-forget, errors handled internally)
-    this.flush();
+    // Final flush attempt (fire-and-forget, errors handled internally).
+    // flush() would refuse to run once disposed, so drain the queue directly.
+    void this.drainQueue();
   }
 
   private captureInstallEvent(): void {

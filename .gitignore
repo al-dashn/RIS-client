@@ -9,3 +9,7 @@ android/.gradle/
 android/build/
 android/sdk/build/
 android/local.properties
+
+# Test coverage output
+web/coverage/
+coverage/

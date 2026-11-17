@@ -8,7 +8,14 @@
     "url": "https://github.com/al-dashn/RIS-client.git",
     "directory": "web"
   },
-  "keywords": ["analytics", "tracking", "events", "gdpr", "zero-pii", "dts-ris"],
+  "keywords": [
+    "analytics",
+    "tracking",
+    "events",
+    "gdpr",
+    "zero-pii",
+    "dts-ris"
+  ],
   "author": "DTS RIS Team",
   "type": "module",
   "main": "./dist/index.js",
@@ -35,12 +42,15 @@
     "build:umd": "node build-umd.mjs",
     "build:all": "npm run build && npm run build:umd",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build:all"
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build:all"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
+    "jsdom": "^26.1.0",
     "terser": "^5.49.0",
     "typescript": "^5.5.0",
-    "vite": "^8.1.4"
+    "vite": "^8.1.4",
+    "vitest": "^3.2.7"
   }
 }
