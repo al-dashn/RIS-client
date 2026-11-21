@@ -80,7 +80,7 @@ In the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.al-dashn:RIS-client:0.3.3")
+    implementation("com.github.al-dashn:RIS-client:0.3.4")
 }
 ```
 
@@ -136,7 +136,7 @@ DTSTracker.initialize(config: DTSConfig(
 | Platform | Package / coordinate | Registry |
 |----------|----------------------|----------|
 | Web      | `@al-dashn/web-sdk` | npm (`registry.npmjs.org`) |
-| Android  | `com.github.al-dashn:RIS-client:0.3.3` | JitPack |
+| Android  | `com.github.al-dashn:RIS-client:0.3.4` | JitPack |
 | iOS      | `DTSRIS` | Swift Package Manager (GitHub tag) |
 
 ---
@@ -146,6 +146,6 @@ DTSTracker.initialize(config: DTSConfig(
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Web: `404 Not Found` on `npm install` | Package not yet published or wrong name | Confirm `@al-dashn/web-sdk` exists on npmjs.com and you typed the name correctly |
-| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.3` tag exists on `al-dashn/RIS-client` |
+| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.4` tag exists on `al-dashn/RIS-client` |
 | iOS: package not found in Xcode | Repo/tag not reachable | Confirm `https://github.com/al-dashn/RIS-client` is public or the customer has repo read access |
 | Events not arriving | Wrong endpoint URL or API key | Verify both values against the onboarding email |

@@ -4,7 +4,7 @@
 # where JitPack collects artifacts from.
 #
 # Customers then use:
-#   implementation("com.github.al-dashn:RIS-client:0.3.3")
+#   implementation("com.github.al-dashn:RIS-client:0.3.4")
 jdk:
   - openjdk21
 install:

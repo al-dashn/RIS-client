@@ -39,7 +39,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = System.getenv("GROUP") ?: "com.github.al-dashn"
                 artifactId = System.getenv("ARTIFACT") ?: "RIS-client"
-                version = System.getenv("VERSION") ?: project.findProperty("VERSION_NAME") as? String ?: "0.3.3"
+                version = System.getenv("VERSION") ?: project.findProperty("VERSION_NAME") as? String ?: "0.3.4"
 
                 pom {
                     name.set("DTS RIS Android SDK")
