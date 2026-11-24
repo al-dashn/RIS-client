@@ -18,7 +18,7 @@ let package = Package(
     targets: [
         .target(
             name: "DTSRIS",
-            path: "Sources/DTSRIS"
+            path: "ios/Sources/DTSRIS"
         ),
     ]
 )

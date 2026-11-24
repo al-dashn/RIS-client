@@ -24,8 +24,10 @@ tracker.start();
 
 ### iOS (Swift Package Manager)
 
+Requires iOS 15 or later.
+
 1. Xcode → File → Add Packages → `https://github.com/al-dashn/RIS-client`
-2. Pick the `ios` target
+2. Select the `DTSRIS` library product
 
 ```swift
 import DTSRIS
@@ -194,8 +196,9 @@ per-platform install/init, and troubleshooting), see
 
 ```bash
 # 1. Bump versions:
-#    web/package.json → "version"
+#    web/package.json → "version" (and package-lock.json)
 #    android/sdk/build.gradle.kts → VERSION_NAME
+#    DTSRIS.podspec → s.version
 
 # 2. Tag & push — this triggers everything
  git tag vX.Y.Z && git push origin vX.Y.Z
@@ -203,4 +206,4 @@ per-platform install/init, and troubleshooting), see
 # Automated on tag push (see .github/workflows/build.yml):
 #   Web     → published to npm (registry.npmjs.org)
 #   Android → JitPack auto-builds from the tag
-#   iOS     → consumed via SPM from the tag
+#   iOS     → SwiftPM manifest and SDK build are validated before release

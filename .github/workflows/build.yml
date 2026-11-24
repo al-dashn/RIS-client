@@ -73,6 +73,18 @@ jobs:
           cd android
           ./gradlew :sdk:assembleRelease
 
+  # ── iOS SDK / Swift Package Manager ──
+  ios-sdk:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Swift package manifest
+        run: swift package dump-package
+
+      - name: Build iOS SDK package
+        run: swift build --target DTSRIS
+
   # ── Publish web SDK to npmjs.com on tag ──
   publish-web:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -96,7 +108,7 @@ jobs:
   # ── Release on tag ──
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [web, android]
+    needs: [web, android, ios-sdk]
     runs-on: ubuntu-latest
     permissions:
       contents: write
