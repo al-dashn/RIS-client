@@ -80,7 +80,7 @@ In the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.al-dashn:RIS-client:0.3.4")
+    implementation("com.github.al-dashn:RIS-client:0.3.5")
 }
 ```
 
@@ -107,6 +107,7 @@ class MyApplication : Application() {
 ## 3. iOS SDK
 
 Distributed via **Swift Package Manager** (no account/registry needed).
+Requires iOS 15 or later.
 
 ### Install
 
@@ -136,7 +137,7 @@ DTSTracker.initialize(config: DTSConfig(
 | Platform | Package / coordinate | Registry |
 |----------|----------------------|----------|
 | Web      | `@al-dashn/web-sdk` | npm (`registry.npmjs.org`) |
-| Android  | `com.github.al-dashn:RIS-client:0.3.4` | JitPack |
+| Android  | `com.github.al-dashn:RIS-client:0.3.5` | JitPack |
 | iOS      | `DTSRIS` | Swift Package Manager (GitHub tag) |
 
 ---
@@ -146,6 +147,6 @@ DTSTracker.initialize(config: DTSConfig(
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Web: `404 Not Found` on `npm install` | Package not yet published or wrong name | Confirm `@al-dashn/web-sdk` exists on npmjs.com and you typed the name correctly |
-| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.4` tag exists on `al-dashn/RIS-client` |
-| iOS: package not found in Xcode | Repo/tag not reachable | Confirm `https://github.com/al-dashn/RIS-client` is public or the customer has repo read access |
+| Android: JitPack "not found" | Tag not pushed, or org mismatch | Confirm the `v0.3.5` tag exists on `al-dashn/RIS-client` |
+| iOS: package or `DTSRIS` product not found | Tag has no root `Package.swift`, or repo/tag is unreachable or inaccessible | Confirm `https://github.com/al-dashn/RIS-client` is public or the customer has repo read access, and that the selected release tag contains the root Swift package manifest |
 | Events not arriving | Wrong endpoint URL or API key | Verify both values against the onboarding email |
