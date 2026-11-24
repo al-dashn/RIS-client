@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'DTSRIS'
-  s.version          = '0.3.4'
+  s.version          = '0.3.5'
   s.summary          = 'DTS RIS iOS SDK — zero-PII analytics auto-capture'
   s.description      = <<-DESC
     DTS RIS iOS SDK automatically captures anonymous user-journey events
@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.homepage         = 'https://github.com/al-dashn/RIS-client'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'DTS RIS Team' => 'a.salvaggio@dashn.com' }
-  s.source           = { :git => 'https://github.com/al-dashn/RIS-client.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/al-dashn/RIS-client.git', :tag => "v#{s.version}" }
   s.swift_versions   = ['5.9']
 
   s.ios.deployment_target = '15.0'
